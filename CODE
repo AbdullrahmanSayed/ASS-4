@@ -1,0 +1,65 @@
+import numpy as np
+
+class AntColonySystem:
+    def __init__(self, num_cities, city_data):
+        self.num_cities = num_cities
+        self.city_data = city_data
+        self.dist_matrix = self.calculate_distance_matrix()
+        self.eta_matrix = 1 / self.dist_matrix
+        self.tau_0 = 1 / (self.num_cities * self.calculate_nearest_neighbor_tour_length())
+        self.pheromone_matrix = np.full((self.num_cities, self.num_cities), self.tau_0)
+
+    def calculate_distance_matrix(self):
+        dist_matrix = np.zeros((self.num_cities, self.num_cities))
+        for i in range(self.num_cities):
+            for j in range(i + 1, self.num_cities):
+                x_diff = self.city_data[i][0] - self.city_data[j][0]
+                y_diff = self.city_data[i][1] - self.city_data[j][1]
+                distance = np.sqrt(x_diff ** 2 + y_diff ** 2)
+                dist_matrix[i, j] = dist_matrix[j, i] = distance
+        return dist_matrix
+
+    def calculate_nearest_neighbor_tour_length(self):
+        visited = [False] * self.num_cities
+        current_city = np.random.randint(self.num_cities)
+        visited[current_city] = True
+        tour_length = 0
+        for _ in range(self.num_cities - 1):
+            nearest_city = None
+            min_distance = float('inf')
+            for city in range(self.num_cities):
+                if not visited[city] and self.dist_matrix[current_city, city] < min_distance:
+                    nearest_city = city
+                    min_distance = self.dist_matrix[current_city, city]
+            tour_length += min_distance
+            visited[nearest_city] = True
+            current_city = nearest_city
+        tour_length += self.dist_matrix[current_city, np.where(np.array(visited) == False)[0][0]]
+        return tour_length
+
+    def run_acs(self, num_ants=10, iterations=20, alpha=1.0, beta=2.0, rho=0.1):
+        for _ in range(iterations):
+            for ant in range(num_ants):
+                tour = self.construct_tour(alpha, beta)
+                self.update_pheromones(tour, rho)
+    
+    def construct_tour(self, alpha, beta):
+        pass  # To be implemented
+
+    def update_pheromones(self, tour, rho):
+        pass  # To be implemented
+
+
+def read_city_data(file_path):
+    with open(file_path, 'r') as file:
+        city_data = [tuple(map(float, line.strip().split())) for line in file]
+    return city_data
+
+if __name__ == "__main__":
+    # Read city data
+    city_data = read_city_data('TSPDATA.txt')
+    num_cities = len(city_data)
+
+    # Initialize and run ACS
+    acs = AntColonySystem(num_cities, city_data)
+    acs.run_acs()
